@@ -62,6 +62,7 @@ def recommend(sim_matrix, user_id, inverted_list_path, topN=20):
         inverted_list = eval(file_in.read())
     file_in.close()
     user_history = inverted_list[user_id]
+    print(user_history)
     rankings = {}
     for has_movie, rating in user_history.items():
         sim_matrix_top = sorted(sim_matrix[has_movie].items(), key=lambda s:s[1], reverse=True)
@@ -73,12 +74,27 @@ def recommend(sim_matrix, user_id, inverted_list_path, topN=20):
                     rankings[related_movie] += sim * rating
     return sorted(rankings.items(), key= lambda r:r[1], reverse= True)
 
+def ref_movie(rank_list, movie_file_path, final_file_out):
+    with open(final_file_out, 'wb') as file_out:
+        for movie, sim in rank_list:
+            with open(movie_file_path) as file_in:
+                reader = csv.DictReader(file_in)
+                for row in reader:
+                    if movie == int(row['movieId']):
+                        headers = ['movieId','title','genres','rankScore']
+                        writer = csv.DictWriter(file_out,headers)
+                        writer.writeheader()
+                        writer.writerow({'movieId':row['movieId'],'title':row['title'],'genres':row['genres'],'rankScore':sim})
+    file_out.close()
+
 rating_path = './data_set/ratings_pos.csv'
 inverted_list_path = './data_set/inverted_list_1_100.txt'
 # inverted_list(rating_path,1,100)
 co_matrix, num_matrix = build_co_matrix(inverted_list_path)
 sim_matrix = similarity_matrix(co_matrix, num_matrix)
 # print(sim_matrix)
-ranking_list = recommend(sim_matrix, 2,inverted_list_path)
-print(ranking_list)
-
+userId = 2
+ranking_list = recommend(sim_matrix, userId,inverted_list_path)
+# for item in ranking_list:
+#     print(item)
+ref_movie(ranking_list, './data_set/movies.csv','./data_set/'+str(userId)+'_Recommendation.csv')
