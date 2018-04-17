@@ -1,6 +1,7 @@
 import csv
 import math
 from collections import defaultdict
+import pickle
 
 class CFR_sys():
 
@@ -31,6 +32,7 @@ class CFR_sys():
         with open('./data_set/inverted_list_'+str(self.movie_id_start)+'_'+str(self.movie_id_end)+'.txt','w') as file_out:
             file_out.write(str(self.inverted_list_dict))
         file_out.close()
+        print("Inverted list finished..")
 
     # build co-occurrence matrix for inverted list
     def build_co_matrix(self):
@@ -48,7 +50,7 @@ class CFR_sys():
                     if j not in self.co_matrix[i].keys():
                         self.co_matrix[i][j] = 0
                     self.co_matrix[i][j] += 1
-
+        print("Co-occurrence matrix finished..")
 
     # Compute the similarity for a pair of movies
     def build_similarity_matrix(self):
@@ -56,6 +58,7 @@ class CFR_sys():
             for related_movie, number in related_movie_dict.items():
                 # Cosine Similarity
                 self.sim_matrix[movie][related_movie] = number / math.sqrt(self.num_matrix[movie] * self.num_matrix[related_movie])
+        print("Similarity matrix finished..")
 
     def recommend(self, user_id, topN=20):
         # Based on the formula: Potential Interest of movie i = interest of movie j * sim(movie i&j)
@@ -71,24 +74,36 @@ class CFR_sys():
                         rankings[related_movie] = sim * rating
                     else:
                         rankings[related_movie] += sim * rating
+        print("Recommendation list finished..")
+        print("Done for User "+str(userId)+"..")
         return sorted(rankings.items(), key= lambda r:r[1], reverse= True)
+
 
     def ref_movie(self, rank_list, final_file_out):
         with open(final_file_out, 'wb') as file_out:
+            headers = ['movieId', 'title', 'genres', 'rankScore']
+            writer = csv.DictWriter(file_out, headers)
+            writer.writeheader()
             for movie, sim in rank_list:
                 with open(self.movie_path) as file_in:
                     reader = csv.DictReader(file_in)
                     for row in reader:
                         if movie == int(row['movieId']):
-                            headers = ['movieId','title','genres','rankScore']
-                            writer = csv.DictWriter(file_out,headers)
-                            writer.writeheader()
                             writer.writerow({'movieId':row['movieId'],'title':row['title'],'genres':row['genres'],'rankScore':sim})
         file_out.close()
+
+    def save_matrix(self):
+        with open('./co_matrix.txt','wb') as out:
+            out.write(str(self.co_matrix))
+            # pickle.dump(self.co_matrix,out)
+        with open('./sim_matrix.txt','wb') as out_:
+            # pickle.dump(self.sim_matrix, out_)
+            out_.write(str(self.sim_matrix))
 
 if __name__ == "__main__":
     rating_path = './data_set/ratings_pos.csv'
     movie_path = './data_set/movies.csv'
+    # movie Id
     start = 1
     end  = 100
     system = CFR_sys(rating_path, movie_path, start, end)
@@ -102,8 +117,11 @@ if __name__ == "__main__":
     userId = 2
     ranking_list = system.recommend(userId)
     # generate the recommendation list as a csv file
-    file_out = './data_set/'+str(userId)+'_Recommendation.csv'
-    system.ref_movie(ranking_list,file_out)
+    # file_out = './data_set/'+str(userId)+'_Recommendation.csv'
+    # system.ref_movie(ranking_list,file_out)
+    # dump matrix
+    system.save_matrix()
+
 
 
 
