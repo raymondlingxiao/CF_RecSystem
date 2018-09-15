@@ -19,6 +19,21 @@ def get_pos_rates(file_in, file_out):
             f_out.close()
     f_in.close()
 
+def get_negative_rates(file_in, file_out):
+    with open(file_in) as f_in:
+        with open(file_out,'wb') as f_out:
+            headers = ['userId', 'movieId', 'rating']
+            reader = csv.DictReader(f_in)
+            writer = csv.DictWriter(f_out, headers)
+            writer.writeheader()
+            for row in reader:
+                if float(row['rating']) < 3:
+                    # begin write a new csv
+                    # data_out = {'userId':row['userId'],'movieId':row['movieId'],'rating':row['rating']}
+                    row.pop('timestamp')
+                    writer.writerow(row)
+            f_out.close()
+    f_in.close()
 def movie_favor_counts(movie_file, rating_file, file_out):
     # get a summary for each movie of their popularity
     with open(movie_file) as movie:
@@ -46,8 +61,9 @@ def movie_favor_counts(movie_file, rating_file, file_out):
         out.close()
     movie.close()
 
-# get_pos_rates('./data_set/ratings.csv','./data_set/ratings_pos.csv')
-movie_favor_counts('./data_set/movies.csv','./data_set/ratings_pos.csv','./data_set/movie_sum.csv')
+# get_pos_rates('./data_Set_Large/ratings.csv','./data_Set_Large/ratings_pos.csv')
+get_negative_rates('./data_set/ratings.csv','./data_set/ratings_neg.csv')
+# movie_favor_counts('./data_set/movies.csv','./data_set/ratings_pos.csv','./data_set/movie_sum.csv')
 
 
 

@@ -41,15 +41,39 @@ class CFR_sys():
         # for each key's value, it represents the [people share mutual interests of another movie: number]
         for user, items in inverted_list.items():
             for i in items.keys():
-                if i not in self.num_matrix.keys():
-                    self.num_matrix[i] = 0
-                self.num_matrix[i] += 1
-                for j in items.keys():
-                    if i == j:
-                        continue
-                    if j not in self.co_matrix[i].keys():
-                        self.co_matrix[i][j] = 0
-                    self.co_matrix[i][j] += 1
+                if items[i] > 3.0:
+                    if i not in self.num_matrix.keys():
+                        self.num_matrix[i] = 0
+                    self.num_matrix[i] += 1
+                    for j in items.keys():
+                        if items[j] > 3.0:
+                            if i == j:
+                                continue
+                            if j not in self.co_matrix[i].keys():
+                                self.co_matrix[i][j] = 0
+                            self.co_matrix[i][j] += 1
+                        else:
+                            if i == j:
+                                continue
+                            if j not in self.co_matrix[i].keys():
+                                self.co_matrix[i][j] = 0
+                else:
+                    if i not in self.num_matrix.keys():
+                        self.num_matrix[i] = 0
+                        for j in items.keys():
+                            if items[j] > 3.0:
+                                if i == j:
+                                    continue
+                                if j not in self.co_matrix[i].keys():
+                                    self.co_matrix[i][j] = 0
+                                self.co_matrix[i][j] += 1
+                            else:
+                                if i == j:
+                                    continue
+                                if j not in self.co_matrix[i].keys():
+                                    self.co_matrix[i][j] = 0
+
+
         print("Co-occurrence matrix finished..")
 
     # Compute the similarity for a pair of movies
@@ -57,7 +81,10 @@ class CFR_sys():
         for movie, related_movie_dict in self.co_matrix.items():
             for related_movie, number in related_movie_dict.items():
                 # Cosine Similarity
-                self.sim_matrix[movie][related_movie] = number / math.sqrt(self.num_matrix[movie] * self.num_matrix[related_movie])
+                if self.num_matrix[movie] == 0 or self.num_matrix[related_movie] == 0:
+                    self.sim_matrix[movie][related_movie] = 0
+                else:
+                    self.sim_matrix[movie][related_movie] = number / math.sqrt(self.num_matrix[movie] * self.num_matrix[related_movie])
         print("Similarity matrix finished..")
 
     def recommend(self, user_id, topN=20):
@@ -101,7 +128,7 @@ class CFR_sys():
             out_.write(str(self.sim_matrix))
 
 if __name__ == "__main__":
-    rating_path = './data_set/ratings_pos.csv'
+    rating_path = './data_set/ratings.csv'
     movie_path = './data_set/movies.csv'
     # movie Id
     start = 1
@@ -117,8 +144,8 @@ if __name__ == "__main__":
     userId = 2
     ranking_list = system.recommend(userId)
     # generate the recommendation list as a csv file
-    # file_out = './data_set/'+str(userId)+'_Recommendation.csv'
-    # system.ref_movie(ranking_list,file_out)
+    file_out = './data_set/'+str(userId)+'_Recommendation.csv'
+    system.ref_movie(ranking_list,file_out)
     # dump matrix
     system.save_matrix()
 
